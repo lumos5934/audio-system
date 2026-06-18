@@ -13,7 +13,7 @@ public class AudioHandle
         get => AudioSource?.volume ?? 0;
         set
         {
-            if (AudioSource)
+            if (AudioSource != null)
             {
                 AudioSource.volume = value;
             }

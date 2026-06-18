@@ -28,7 +28,7 @@ namespace LLib
         }
         
         
-        private void Awake()
+        private void Awake()    
         {
             if (_mixer == null)
             {
