@@ -38,11 +38,12 @@ GameObject / Aduio / AudioManager<br>
 <br>
 
 ### Audio Data 할당
+원하는 그룹에 Audio Data를 할당 하면 되고, 그룹을 통틀어서 중복된 id 가 있다면 무시 될 수 있습니다. Audio Mixer 에 있는 Audio Mixer Group 을 자동으로 탐색하여 해당 그룹 만큼 인스펙터에 표시됩니다. <br>
 <img width="286" height="191" alt="image" src="https://github.com/user-attachments/assets/dd1265ca-9872-4d72-abc6-cc6251e1a43a" />
 <img width="287" height="166" alt="image" src="https://github.com/user-attachments/assets/c6d3f755-e63d-48f9-9a41-c768ec13f864" /> 
 <img width="288" height="92" alt="image" src="https://github.com/user-attachments/assets/ecdef582-04b4-4905-a255-3151a0aac109" /><br>
 
-원하는 그룹에 Audio Data를 할당 하면 되고, 그룹을 통틀어서 중복된 id 가 있다면 무시 될 수 있습니다. Audio Mixer 에 있는 Audio Mixer Group 을 자동으로 탐색하여 해당 그룹 만큼 인스펙터에 표시됩니다.
+
 
 * #### 동적 할당
 ```cs
