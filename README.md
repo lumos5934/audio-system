@@ -12,9 +12,8 @@ audio mixer 를 기반으로 audio source 를 풀링하여 채널별로 재생, 
 
 
 ## 🔧Usage
-Audio Data를 생성해 AudioManager 에 등록하고 AudioManager 를 통해 전체적인 오디오의 그룹별 출력을 관리합니다.
+Audio Data를 생성해 AudioManager 에 등록하고 AudioManager 를 통해 전체적인 오디오의 그룹별 출력을 관리합니다.<br>
 
-<br>
 <br>
 
 ### Audio Data 생성
