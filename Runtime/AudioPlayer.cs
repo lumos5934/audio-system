@@ -38,7 +38,6 @@ namespace LLib
         }
 
         
-        [ContextMenu("Play")]
         public void Play()
         {
             if (_handle.IsValid) 
@@ -48,7 +47,6 @@ namespace LLib
         }
 
         
-        [ContextMenu("Stop")]
         public void Stop()
         {
             _handle.Stop(_fadeOutDuration);

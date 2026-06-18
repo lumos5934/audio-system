@@ -12,8 +12,8 @@ namespace LLib
     {
         public static AudioManager Instance { get; private set; }
 
-        [SerializeField] private AudioMixer _mixer;
-        [SerializeField] private List<AudioSetup> _setupList = new();
+        [SerializeField, HideInInspector] private AudioMixer _mixer;
+        [SerializeField, HideInInspector] private List<AudioSetup> _setupList = new();
 
         private Dictionary<string, AudioGroup> _groupByName = new();
         private Dictionary<string, (AudioGroup, AudioData)> _groupDataById = new();
