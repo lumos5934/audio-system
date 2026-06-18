@@ -36,12 +36,12 @@ public class AudioHandle
     }
     
     
-    public void Stop(float fadeTime = 0f)
+    public void Stop(float fadeDuration = 0f)
     {
         if (AudioSource == null) return;
-        if (fadeTime > 0f)
+        if (fadeDuration > 0f)
         {
-            AudioManager.Instance.FadeTo(this, 0f, fadeTime, () => _pool.Release(this));
+            AudioManager.Instance.FadeTo(this, 0f, fadeDuration, () => _pool.Release(this));
         }
         else
         {

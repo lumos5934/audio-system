@@ -95,7 +95,7 @@ namespace LLib
         }
 
         
-        public AudioHandle PlayAt(string id, Vector3 pos, float fadeInDuration = 0f)
+        public AudioHandle PlayAt(string id, Vector3 pos, float fadeDuration = 0f)
         {
             if(!_groupDataById.TryGetValue(id, out var value))
                 return AudioHandle.Invalid;
@@ -111,10 +111,10 @@ namespace LLib
             audioSource.transform.position = pos;
             audioSource.Play();
             
-            if (fadeInDuration > 0f)
+            if (fadeDuration > 0f)
             {
                 audioSource.volume = 0f;
-                FadeTo(handle, handle.BaseVolume, fadeInDuration);
+                FadeTo(handle, handle.BaseVolume, fadeDuration);
             }
 
             if (!data.loop)
@@ -178,12 +178,12 @@ namespace LLib
         }
 
         
-        public void SetVolume(string groupName, float linear)
+        public void SetVolume(string groupName, float normalizedVolume)
         {
             if (_groupByName.TryGetValue(groupName, out var group))
             {
-                float dB = linear > 0.0001f ? Mathf.Log10(linear) * 20f : -80f;
-                group.MixerGroup.audioMixer.SetFloat(groupName, dB);
+                float value = normalizedVolume > 0.0001f ? Mathf.Log10(normalizedVolume) * 20f : -80f;
+                group.MixerGroup.audioMixer.SetFloat(groupName, value);
             }
         }
 
@@ -192,12 +192,11 @@ namespace LLib
         {
             if (_groupByName.TryGetValue(groupName, out var group))
             {
-                group.MixerGroup.audioMixer.GetFloat(groupName, out var volume);
-                
-                return volume;
+                group.MixerGroup.audioMixer.GetFloat(groupName, out var dB);
+                return Mathf.Pow(10, dB / 20f);
             }
 
-            return -1;
+            return 0f;
         }
         
         
