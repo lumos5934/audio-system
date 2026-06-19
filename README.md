@@ -155,4 +155,4 @@ AduioManager.Instance.GetVolume("BGM");
 **`Stop()`** : 오디오를 정지합니다. <br>
 **`Pause()`** : 오디오를 일시정지합니다. <br>
 **`UnPause()`** : 오디오의 일시정지를 해제합니다. <br>
-**`SetVolume()` ** : 오디오의 볼륨을 조절합니다. <br>
+**`SetVolume()`** : 오디오의 볼륨을 조절합니다. <br>
