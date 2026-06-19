@@ -10,8 +10,14 @@ namespace LLib
 {
     public class AudioManager : MonoBehaviour
     {
-        public static AudioManager Instance { get; private set; }
-
+        [Serializable]
+        private struct AudioSetup
+        {
+            public string groupName;
+            public List<AudioData> audioDataList;
+        }
+        
+        
         [SerializeField, HideInInspector] private AudioMixer _mixer;
         [SerializeField, HideInInspector] private List<AudioSetup> _setupList = new();
 
@@ -19,13 +25,8 @@ namespace LLib
         private Dictionary<string, (AudioGroup, AudioData)> _groupDataById = new();
         private AudioHandlePool _handlePool;
 
-       
-        [Serializable]
-        private struct AudioSetup
-        {
-            public string groupName;
-            public List<AudioData> audioDataList;
-        }
+        
+        public static AudioManager Instance { get; private set; }
         
         
         private void Awake()    
@@ -66,7 +67,6 @@ namespace LLib
             }
         }
 
-
         public void Register(string groupName, AudioData data)
         {
             if (_groupByName.TryGetValue(groupName, out var group))
@@ -82,19 +82,16 @@ namespace LLib
             }
         }
 
-
         public void Register(AudioMixerGroup group, AudioData data)
         {
             Register(group.name, data);
         }
-
 
         public AudioHandle Play(string id, float fadeIn = 0f)
         {
             return PlayAt(id, Vector3.zero, fadeIn);
         }
 
-        
         public AudioHandle PlayAt(string id, Vector3 pos, float fadeDuration = 0f)
         {
             if(!_groupDataById.TryGetValue(id, out var value))
@@ -127,19 +124,16 @@ namespace LLib
             return handle;
         }
 
-
         public void Stop(string groupName = "", float fade = 0f)
         {
             ForeachGroup(groupName, handle => handle.Stop(fade));
         }
 
-        
         public void Pause(string groupName = "")
         {
             ForeachGroup(groupName, handle => handle.Pause());
         }
 
-        
         public void UnPause(string groupName = "")
         {
             ForeachGroup(groupName, handle => handle.UnPause());
