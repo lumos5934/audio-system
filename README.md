@@ -2,8 +2,8 @@
 
 audio mixer 를 기반으로 오디오를 관리합니다. audio source를 풀링하여 Mixer Group 별로 재생, 정지를 하고, 볼륨 관리를 할 수 있습니다. 
 
-* [ Usage ](#usage)
-* [ API ](#api)
+[ Usage ](#usage) <br>
+[ API ](#api)
 
 <br>
 <br>
