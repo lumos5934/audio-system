@@ -5,48 +5,25 @@ namespace LLib
 {
     public class AudioPlayer : MonoBehaviour
     {
-        [SerializeField] private string _id;
+        [SerializeField] private AudioData _data;
         [SerializeField] private float _fadeInDuration   = 0f;
         [SerializeField] private float _fadeOutDuration  = 0f;
-        [SerializeField] private bool _playOnEnable = true;
-        [SerializeField] private bool _followTransform = false;
+        [SerializeField] private bool _isSourceRoot = false;
 
         private AudioHandle _handle = AudioHandle.Invalid;
 
-  
-        private void OnEnable()
-        {
-            if (_playOnEnable)
-            {
-                StartCoroutine(PlayOnEnableDelayRoutine());
-            }
-        }
-
         private void OnDisable()
         {
-            Stop();   
+            Stop();
         }
-
-        private void Update()
-        {
-            if (_followTransform &&
-                _handle.IsValid &&
-                _handle.AudioSource != null)
-            {
-                _handle.AudioSource.transform.position = transform.position;
-            }
-        }
-
         
         public void Play()
         {
-            if (_handle.IsValid) 
-                return;
-            
-            _handle = AudioManager.Instance.PlayAt(_id, transform.position, _fadeInDuration);
+            _handle = _isSourceRoot ? 
+                AudioManager.Instance.Play(_data, transform, _fadeInDuration) : 
+                AudioManager.Instance.Play(_data, _fadeInDuration);
         }
 
-        
         public void Stop()
         {
             _handle.Stop(_fadeOutDuration);
@@ -67,7 +44,6 @@ namespace LLib
         {
             _handle.Volume = normalizedVolume;
         }
-
 
         private IEnumerator PlayOnEnableDelayRoutine()
         {

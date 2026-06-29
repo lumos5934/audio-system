@@ -1,33 +1,20 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Audio;
 
 
 namespace LLib
 {
-    public class AudioManager : MonoBehaviour
+    public partial class AudioManager : MonoBehaviour
     {
-        [Serializable]
-        private struct AudioSetup
-        {
-            public string groupName;
-            public List<AudioData> audioDataList;
-        }
-        
-        
-        [SerializeField, HideInInspector] private AudioMixer _mixer;
-        [SerializeField, HideInInspector] private List<AudioSetup> _setupList = new();
+        [SerializeField] private AudioMixer _mixer;
 
-        private Dictionary<string, AudioGroup> _groupByName = new();
-        private Dictionary<string, (AudioGroup, AudioData)> _groupDataById = new();
-        private AudioHandlePool _handlePool;
-
+        private Dictionary<AudioMixerGroup, List<AudioHandle>> _activeHandles = new();
+        private Pool _pool;
         
         public static AudioManager Instance { get; private set; }
-        
         
         private void Awake()    
         {
@@ -46,66 +33,40 @@ namespace LLib
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            
-            _handlePool = new AudioHandlePool(transform);
-
-            var mixerGroups = _mixer.FindMatchingGroups("");
-            foreach (var mixerGroup in mixerGroups)
-            {
-                _groupByName[mixerGroup.name] = new AudioGroup()
-                {
-                    MixerGroup = mixerGroup,
-                };
-            }
-
-            foreach (var setup in _setupList)
-            {
-                foreach (var audioData in setup.audioDataList)
-                {
-                    Register(setup.groupName,  audioData);
-                }
-            }
+            _pool = new Pool();
+        }
+   
+        public AudioHandle Play(AudioData data, float fadeIn = 0f)
+        {
+            return Play(data, null, Vector3.zero, fadeIn);
         }
 
-        public void Register(string groupName, AudioData data)
+        public AudioHandle Play(AudioData data, Vector3 position, float fadeIn = 0f)
         {
-            if (_groupByName.TryGetValue(groupName, out var group))
-            {
-                if (!_groupDataById.TryAdd(data.id, (group, data)))
-                {
-                    Debug.LogWarning($"already registered: {data.id}");
-                }
-            }
-            else
-            {
-                Debug.LogError($"not found Group :'{groupName}' , Data :'{data.id}'");
-            }
+            return Play(data, null, position, fadeIn);
         }
-
-        public void Register(AudioMixerGroup group, AudioData data)
+        
+        public AudioHandle Play(AudioData data, Transform root, float fadeIn = 0f)
         {
-            Register(group.name, data);
+            return Play(data, root, Vector3.zero, fadeIn);
         }
-
-        public AudioHandle Play(string id, float fadeIn = 0f)
+        
+        private AudioHandle Play(AudioData data, Transform root, Vector3 pos, float fadeDuration = 0f)
         {
-            return PlayAt(id, Vector3.zero, fadeIn);
-        }
-
-        public AudioHandle PlayAt(string id, Vector3 pos, float fadeDuration = 0f)
-        {
-            if(!_groupDataById.TryGetValue(id, out var value))
-                return AudioHandle.Invalid;
-            
-            AudioGroup group = value.Item1;
-            AudioData data = value.Item2;
-            
-            var handle = _handlePool.Get(group, data);
+            var handle = GetHandle(data);
             if(handle == null)
                 return AudioHandle.Invalid;
             
             var audioSource = handle.AudioSource;
-            audioSource.transform.position = pos;
+            if (root != null)
+            {
+                audioSource.transform.SetParent(root);
+                audioSource.transform.localPosition = Vector3.zero;
+            }
+            else
+            {
+                audioSource.transform.position = pos;
+            }
             audioSource.Play();
             
             if (fadeDuration > 0f)
@@ -114,85 +75,78 @@ namespace LLib
                 FadeTo(handle, handle.BaseVolume, fadeDuration);
             }
 
-            if (!data.loop)
+            if (!data.Loop)
             {
                 StartCoroutine(AutoReleaseRoutine(handle));
             }
-
-            group.ActiveHandles.Add(handle);
             
             return handle;
         }
 
-        public void Stop(string groupName = "", float fade = 0f)
+        private AudioHandle GetHandle(AudioData data)
         {
-            ForeachGroup(groupName, handle => handle.Stop(fade));
-        }
-
-        public void Pause(string groupName = "")
-        {
-            ForeachGroup(groupName, handle => handle.Pause());
-        }
-
-        public void UnPause(string groupName = "")
-        {
-            ForeachGroup(groupName, handle => handle.UnPause());
-        }
-
-
-        private void ForeachGroup(string groupName, Action<AudioHandle> handleAction)
-        {
-            if (string.IsNullOrEmpty(groupName))
+            var handle = _pool.Get(data);
+            if(handle == null)
+                return AudioHandle.Invalid;
+            
+            var mixerGroup = data.MixerGroup;
+            if (!_activeHandles.ContainsKey(mixerGroup))
             {
-                foreach (var nameGroupPair in _groupByName)
+                _activeHandles[mixerGroup] = new();
+            }
+          
+            _activeHandles[mixerGroup].Add(handle);
+            
+            return handle;
+        }
+        
+        public void Stop(AudioMixerGroup mixerGroup, float fade = 0f)
+        {
+            ForeachGroup(mixerGroup, handle => handle.Stop(fade));
+        }
+
+        public void Pause(AudioMixerGroup mixerGroup)
+        {
+            ForeachGroup(mixerGroup, handle => handle.Pause());
+        }
+
+        public void UnPause(AudioMixerGroup mixerGroup)
+        {
+            ForeachGroup(mixerGroup, handle => handle.UnPause());
+        }
+
+        private void ForeachGroup(AudioMixerGroup mixerGroup, Action<AudioHandle> handleAction)
+        {
+            foreach (var pair in _activeHandles)
+            {
+                if (pair.Key == mixerGroup)
                 {
-                    foreach (var handle in nameGroupPair.Value.ActiveHandles.ToList())
+                    foreach (var handle in pair.Value)
                     {
                         handleAction?.Invoke(handle);
                     }
-                }
 
-                return;
-            }
-            
-            
-            if (_groupByName.TryGetValue(groupName, out var group))
-            {
-                foreach (var handle in group.ActiveHandles.ToList())
-                {
-                    handleAction?.Invoke(handle);
+                    return;
                 }
             }
         }
-
 
         public void FadeTo(AudioHandle handle, float target, float duration, Action onComplete = null)
         {
             StartCoroutine(FadeRoutine(handle, target, duration, onComplete));
         }
 
-        
-        public void SetVolume(string groupName, float normalizedVolume)
+        public void SetVolume(AudioMixerGroup mixerGroup, float normalizedVolume)
         {
-            if (_groupByName.TryGetValue(groupName, out var group))
-            {
-                float value = normalizedVolume > 0.0001f ? Mathf.Log10(normalizedVolume) * 20f : -80f;
-                group.MixerGroup.audioMixer.SetFloat(groupName, value);
-            }
+            float value = normalizedVolume > 0.0001f ? Mathf.Log10(normalizedVolume) * 20f : -80f;
+            _mixer.SetFloat(mixerGroup.name, value);
         }
 
-        
-        public float GetVolume(string groupName)
+        public float GetVolume(AudioMixerGroup mixerGroup)
         {
-            if (_groupByName.TryGetValue(groupName, out var group))
-            {
-                group.MixerGroup.audioMixer.GetFloat(groupName, out var dB);
-                return Mathf.Pow(10, dB / 20f);
-            }
-
-            return 0f;
+            _mixer.GetFloat(mixerGroup.name, out var dB);
+            return Mathf.Pow(10, dB / 20f);
         }
-        
         
         private IEnumerator FadeRoutine(AudioHandle handle, float targetVolume, float duration, Action onComplete)
         {
@@ -210,16 +164,16 @@ namespace LLib
             
             onComplete?.Invoke();
         }
-        
 
-        private IEnumerator AutoReleaseRoutine(AudioHandle h)
+        private IEnumerator AutoReleaseRoutine(AudioHandle handle)
         {
-            while (h.IsValid)
+            while (handle.IsValid)
             {
                 yield return null;
             }
-        
-            _handlePool.Release(h);
+
+            _activeHandles[handle.Data.MixerGroup].Remove(handle);
+            _pool.Release(handle);
         }
     }
 }

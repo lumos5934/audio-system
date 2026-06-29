@@ -1,112 +1,107 @@
-﻿using LLib;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class AudioHandle
+namespace LLib
 {
-    public static readonly AudioHandle Invalid = new();
-
-    public bool  IsValid    => AudioSource != null && AudioSource.isPlaying || _isPaused;
-    public bool  IsPlaying  => AudioSource != null && AudioSource.isPlaying;
-    public bool  IsPaused   => _isPaused;
-    public float Volume
+    public class AudioHandle
     {
-        get => AudioSource?.volume ?? 0;
-        set
+        public static readonly AudioHandle Invalid = new();
+
+        public bool  IsValid    => AudioSource != null && AudioSource.isPlaying || _isPaused;
+        public bool  IsPlaying  => AudioSource != null && AudioSource.isPlaying;
+        public bool  IsPaused   => _isPaused;
+        public float Volume
         {
-            if (AudioSource != null)
+            get => AudioSource?.volume ?? 0;
+            set
             {
-                AudioSource.volume = value;
+                if (AudioSource != null)
+                {
+                    AudioSource.volume = value;
+                }
             }
         }
-    }
-    
-    internal AudioSource AudioSource;
-    internal AudioData Data;
-    internal float BaseVolume;
-    
-    private bool _isPaused;
-    private AudioGroup _group;
-    private AudioHandlePool _pool;
-    
+        
+        internal AudioSource AudioSource;
+        internal AudioData Data;
+        internal float BaseVolume;
+        
+        private bool _isPaused;
+        
+        internal AudioHandle() { }
 
-    AudioHandle() { }
-    internal AudioHandle(AudioHandlePool pool)
-    {
-        _pool = pool;
-    }
-    
-    
-    public void Stop(float fadeDuration = 0f)
-    {
-        if (AudioSource == null) return;
-        if (fadeDuration > 0f)
+        
+        public void Stop(float fadeDuration = 0f)
         {
-            AudioManager.Instance.FadeTo(this, 0f, fadeDuration, () => _pool.Release(this));
+            if (AudioSource == null) 
+                return;
+            
+            if (fadeDuration > 0f)
+            {
+                AudioManager.Instance.FadeTo(this, 0f, fadeDuration, () => AudioSource.Stop());
+            }
+            else
+            {
+                AudioSource.Stop();
+            }
         }
-        else
+
+        
+        public void Pause()
         {
-            _pool.Release(this);
+            if (AudioSource == null || _isPaused) 
+                return;
+            
+            AudioSource.Pause();
+            _isPaused = true;
         }
-    }
 
-    
-    public void Pause()
-    {
-        if (AudioSource == null || _isPaused) 
-            return;
         
-        AudioSource.Pause();
-        _isPaused = true;
-    }
+        public void UnPause()
+        {
+            if (AudioSource == null || !_isPaused) 
+                return;
+            
+            AudioSource.UnPause();
+            _isPaused = false;
+        }
 
-    
-    public void UnPause()
-    {
-        if (AudioSource == null || !_isPaused) 
-            return;
+
+        public void Fade(float targetVolume, float duration)
+        {
+            AudioManager.Instance.FadeTo(this, targetVolume, duration);
+        }
         
-        AudioSource.UnPause();
-        _isPaused = false;
-    }
-
-
-    public void Fade(float targetVolume, float duration)
-    {
-        AudioManager.Instance.FadeTo(this, targetVolume, duration);
-    }
-    
-    
-    internal void Bind(AudioGroup group, AudioSource source, AudioData data)
-    {
-        Data = data;
-        _group = group;
         
-        AudioSource = source;
-        AudioSource.playOnAwake = false;
-        AudioSource.outputAudioMixerGroup = group.MixerGroup;
-        var clipData = Data.GetClipData();
-        AudioSource.clip = clipData.Clip;
-        AudioSource.volume = clipData.Volume;
-        AudioSource.pitch = clipData.Pitch;
-        AudioSource.priority = Data.priority;
-        AudioSource.loop = Data.loop;
-        
-        BaseVolume = source.volume;
-        
-        _isPaused = false;
-    }
+        internal void Bind(AudioSource source, AudioData data)
+        {
+            Data = data;
+            
+            AudioSource = source;
+            AudioSource.playOnAwake = false;
+            AudioSource.outputAudioMixerGroup = data.MixerGroup;
+            AudioSource.clip = Data.Clip;
+            AudioSource.volume = Data.Volume;
+            AudioSource.pitch = Data.Pitch;
+            AudioSource.priority = Data.Priority;
+            AudioSource.loop = Data.Loop;
+            
+            BaseVolume = source.volume;
+            
+            _isPaused = false;
+        }
 
 
-    internal void Unbind()
-    {
-        if (AudioSource == null) 
-            return;
+        internal void Unbind()
+        {
+            if (AudioSource == null) 
+                return;
 
-        _group.ActiveHandles.Remove(this);
-        AudioSource.Stop();
-        AudioSource.loop = false;
-        AudioSource   = null;
-        Data     = null;
-        _isPaused = false;
+            AudioSource.Stop();
+            AudioSource.loop = false;
+            AudioSource = null;
+            Data = null;
+            
+            _isPaused = false;
+        }
     }
 }

@@ -1,19 +1,17 @@
 ﻿using UnityEngine;
+using UnityEngine.Audio;
 
-[CreateAssetMenu(fileName = "NewAudioData" ,menuName = "Audio Data", order = 0)]
-public class AudioData : ScriptableObject
+namespace LLib
 {
-    public string id;
-    public bool loop;
-    [Range(0, 256)] public int priority = 128;
-
-    [field: SerializeField] public AudioClipData[] ClipData { get; private set; }
-
-    public AudioSource sourcePrefab;
-
-    public AudioClipData GetClipData()
+    [CreateAssetMenu(fileName = "NewAudioData", menuName = "Audio Data", order = 0)]
+    public class AudioData : ScriptableObject
     {
-        var rand = Random.Range(0, ClipData.Length);
-        return ClipData[rand];
+        [field: SerializeField] public bool Loop { get; private set; }
+        [field: SerializeField] public AudioMixerGroup MixerGroup { get; private set; }
+        [field: SerializeField] public AudioClip Clip { get; private set; }
+        [field: SerializeField, Range(0, 1)] public float Volume { get; private set; } = 1f;
+        [field: SerializeField, Range(0, 1)] public float Pitch { get; private set; } = 1f;
+        [field: SerializeField, Range(0, 256)] public int Priority { get; private set; } = 128;
+        [field: SerializeField] public AudioSource SourcePrefab { get; private set; }
     }
 }
